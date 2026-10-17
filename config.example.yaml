@@ -1,0 +1,61 @@
+# FarNVR – konfigurace
+# Hodnoty ${PROMENNA} se doplní ze souboru .env (hesla nepatří sem).
+
+server:
+  site_name: "FarNVR"
+  data_path: /var/lib/nvr          # lokální disk serveru (databáze, cache) – NE na NAS
+  cookie_secure: true              # false jen pro testování bez HTTPS
+  session_days: 30                 # jak dlouho zůstane uživatel přihlášený
+  export_max_hours: 4              # max. délka jednoho exportu do MP4
+  transcode_height: 720            # výška videa v režimu kompatibility (H.264)
+  transcode_workers: 2             # souběžné převody pro starší prohlížeče
+
+storage:
+  path: /recordings                # přípojný bod NAS uvnitř kontejneru
+  retention_days: 14               # jak dlouho uchovávat záznamy
+  max_usage_percent: 92            # nad tímto zaplněním se mažou nejstarší záznamy
+
+recording:
+  segment_seconds: 6               # délka jednoho úseku záznamu
+  via_go2rtc: true                 # nahrávat přes go2rtc = jen 1 spojení na kameru
+  pre_seconds: 10                  # režim "motion": kolik sekund před pohybem ponechat
+  post_seconds: 20                 # režim "motion": kolik sekund po pohybu ponechat
+  max_event_seconds: 300           # pojistka, když kamera nepošle konec pohybu
+
+live:
+  go2rtc_api: http://go2rtc:1984
+  go2rtc_rtsp: rtsp://go2rtc:8554
+  go2rtc_config: /go2rtc-config/go2rtc.yaml
+  webrtc: false                    # true = nižší zpoždění, vyžaduje port 8555 tcp/udp na FW
+  webrtc_candidates: []            # např. ["203.0.113.10:8555"] (veřejná IP serveru)
+
+# Kamery (otestováno s kamerami Uniview; jiné značky s RTSP a ONVIF by měly fungovat také)
+#   host       IP adresa / DNS kamery (nebo veřejná adresa lokality)
+#   rtsp_port  port RTSP kamery (výchozí 554)
+#   http_port  port web/ONVIF kamery (výchozí 80)
+#   main_path  cesta hlavního streamu (Uniview: /unicast/c1/s0/live)
+#   sub_path   cesta sub streamu    (Uniview: /unicast/c1/s1/live)
+#   mode       continuous = nepřetržitě, motion = ukládat jen okolí pohybu
+cameras:
+  - id: cam1
+    name: "Kamera 1"
+    host: 192.0.2.10
+    rtsp_port: 554
+    http_port: 80
+    username: ${CAM_USER}
+    password: ${CAM1_PASSWORD}
+    main_path: /unicast/c1/s0/live    # hlavní stream – nahrávání a detail
+    sub_path: /unicast/c1/s1/live     # sub stream – náhledy v mřížce
+    mode: continuous
+    audio: true
+    onvif: true
+
+  - id: cam2
+    name: "Kamera 2"
+    host: 192.0.2.11
+    username: ${CAM_USER}
+    password: ${CAM2_PASSWORD}
+    mode: motion
+
+  # Další kamery doplňte stejným způsobem a restartujte:
+  #   docker compose restart nvr

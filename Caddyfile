@@ -1,0 +1,21 @@
+# HTTPS certifikát z Let's Encrypt se vystaví automaticky pro NVR_DOMAIN
+# (doména musí mířit na veřejnou IP serveru a porty 80/443 musí být na FW
+# přesměrované na tento server).
+{
+	email {$ACME_EMAIL}
+}
+
+{$NVR_DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	reverse_proxy nvr:8000 {
+		flush_interval -1
+	}
+	log {
+		output stdout
+		format console
+	}
+}

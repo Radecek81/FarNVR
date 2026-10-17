@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1419">
+  <title>Přihlášení – FarNVR</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/login.js"></script>
+</head>
+<body class="login-page">
+  <form class="card login-card stack" autocomplete="on">
+    <div class="brand"><img src="/icon.svg" alt="" width="34" height="34"><span>FarNVR</span></div>
+    <h1 data-i18n="login.title"></h1>
+    <label><span data-i18n="login.username"></span><input name="username" autocomplete="username" autocapitalize="none" required autofocus></label>
+    <label><span data-i18n="login.password"></span><input name="password" type="password" autocomplete="current-password" required></label>
+    <label class="otp" hidden><span data-i18n="login.otp"></span><input name="otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6"></label>
+    <p class="alert" hidden></p>
+    <button class="btn primary" data-i18n="login.submit"></button>
+    <div class="row center">
+      <button type="button" class="btn ghost small" data-lang="cs">CZ</button>
+      <button type="button" class="btn ghost small" data-lang="en">EN</button>
+    </div>
+  </form>
+  <footer class="credit">FarNVR © Uberit s.r.o. · <a href="https://github.com/Radecek81/FarNVR" rel="noopener">AGPL-3.0</a></footer>
+</body>
+</html>

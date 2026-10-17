@@ -1,0 +1,52 @@
+# FarNVR – produkční nasazení na Ubuntu 24.04
+#   1) NAS připojený do /mnt/nvr (viz README, kapitola NAS)
+#   2) cp config.example.yaml config.yaml && cp .env.example .env   (vyplnit)
+#   3) docker compose up -d --build
+services:
+  nvr:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./config.yaml:/etc/nvr/config.yaml:ro
+      - ./data/nvr:/var/lib/nvr
+      - ./data/go2rtc:/go2rtc-config
+      - ${NVR_STORAGE:-/mnt/nvr}:/recordings
+    depends_on:
+      - go2rtc
+    networks: [nvr]
+
+  go2rtc:
+    # Konfiguraci generuje služba nvr z config.yaml (data/go2rtc/go2rtc.yaml)
+    image: alexxit/go2rtc:1.9.9
+    restart: unless-stopped
+    volumes:
+      - ./data/go2rtc:/config
+    # Jen pokud je v config.yaml zapnuté live.webrtc:
+    # ports:
+    #   - "8555:8555/tcp"
+    #   - "8555:8555/udp"
+    networks: [nvr]
+
+  caddy:
+    image: caddy:2.8.4
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - nvr
+    networks: [nvr]
+
+networks:
+  nvr: {}
+
+volumes:
+  caddy_data: {}
+  caddy_config: {}
