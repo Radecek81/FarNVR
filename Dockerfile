@@ -4,7 +4,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     TZ=Europe/Prague \
-    NVR_CONFIG=/etc/nvr/config.yaml
+    NVR_CONFIG=/etc/nvr/config.yaml \
+    FORWARDED_ALLOW_IPS=*
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ffmpeg python3 python3-venv tzdata ca-certificates \
@@ -26,4 +27,4 @@ USER ubuntu
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s CMD python3 -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/healthz')"
 CMD ["/opt/venv/bin/uvicorn", "--factory", "app.main:create_app", "--host", "0.0.0.0", "--port", "8000", \
-     "--proxy-headers", "--forwarded-allow-ips", "*", "--no-server-header"]
+     "--proxy-headers", "--no-server-header"]

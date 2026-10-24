@@ -118,7 +118,7 @@ git clone <repozitář> && cd <repozitář>/nvr
 cp config.example.yaml config.yaml      # kamery, retence
 cp .env.example .env                    # doména, hesla kamer
 chmod 600 .env
-mkdir -p data/nvr data/go2rtc && sudo chown -R 1000:1000 data
+mkdir -p data/nvr data/go2rtc && sudo chown -R 1000:1000 data   # kontejner běží jako uid 1000
 
 docker compose build
 docker compose run --rm nvr nvr-cli storage-init     # označí NAS jako úložiště záznamů
@@ -131,6 +131,25 @@ docker compose exec nvr nvr-cli user add petra --totp
 
 Soubor `.nvr-storage` v kořeni NAS je pojistka: když se NFS nepřipojí, NVR nenahrává na lokální disk
 serveru a v rozhraní ukáže varování.
+
+### Vlastní reverzní proxy místo Caddy (nginx apod.)
+
+Když jsou porty 80/443 na serveru obsazené nebo HTTPS řeší jiný server:
+
+1. V `.env` nastavte `COMPOSE_PROFILES=` (prázdné). Caddy se pak nespustí.
+2. `NVR_BIND` / `NVR_PORT` určují, kde FarNVR poslouchá:
+   - proxy na **stejném** serveru: `NVR_BIND=127.0.0.1`,
+   - proxy na **jiném** serveru: `NVR_BIND=<LAN IP tohoto serveru>` a `FORWARDED_ALLOW_IPS=<IP proxy>`.
+3. Konfigurace pro nginx je v [docs/nginx.conf](docs/nginx.conf) (WebSocket, timeouty, bez bufferování videa).
+
+**Pozor: Docker obchází UFW.** Port publikovaný na LAN IP je otevřený i bez pravidla ve firewallu.
+Přístup omezte jen na IP proxy v řetězci `DOCKER-USER`:
+
+```bash
+# povolit port NVR_PORT (8090) jen z reverzní proxy, ostatním zahodit
+sudo iptables -I DOCKER-USER -p tcp -m conntrack --ctorigdstport 8090 ! -s <IP_PROXY> -j DROP
+sudo apt install -y iptables-persistent && sudo netfilter-persistent save
+```
 
 ### Firewall
 

@@ -2,6 +2,11 @@
 #   1) NAS připojený do /mnt/nvr (viz README, kapitola NAS)
 #   2) cp config.example.yaml config.yaml && cp .env.example .env   (vyplnit)
 #   3) docker compose up -d --build
+#
+# HTTPS:
+#   - vestavěný Caddy (výchozí): v .env COMPOSE_PROFILES=caddy, porty 80/443 na tomto serveru
+#   - vlastní reverzní proxy (nginx apod.): v .env COMPOSE_PROFILES= (prázdné) a proxy
+#     směrujte na NVR_BIND:NVR_PORT (viz docs/nginx.conf)
 services:
   nvr:
     build: .
@@ -12,6 +17,10 @@ services:
       - ./data/nvr:/var/lib/nvr
       - ./data/go2rtc:/go2rtc-config
       - ${NVR_STORAGE:-/mnt/nvr}:/recordings
+    # Přímý přístup pro externí reverzní proxy. Výchozí 127.0.0.1 = jen z tohoto serveru.
+    # Docker obchází UFW – při bindu na LAN IP omezte přístup v řetězci DOCKER-USER (viz README).
+    ports:
+      - "${NVR_BIND:-127.0.0.1}:${NVR_PORT:-8090}:8000"
     depends_on:
       - go2rtc
     networks: [nvr]
@@ -29,6 +38,7 @@ services:
     networks: [nvr]
 
   caddy:
+    profiles: [caddy]
     image: caddy:2.8.4
     restart: unless-stopped
     env_file: .env
