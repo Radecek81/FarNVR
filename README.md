@@ -145,11 +145,30 @@ Když jsou porty 80/443 na serveru obsazené nebo HTTPS řeší jiný server:
 **Pozor: Docker obchází UFW.** Port publikovaný na LAN IP je otevřený i bez pravidla ve firewallu.
 Přístup omezte jen na IP proxy v řetězci `DOCKER-USER`:
 
-```bash
-# povolit port NVR_PORT (8090) jen z reverzní proxy, ostatním zahodit
-sudo iptables -I DOCKER-USER -p tcp -m conntrack --ctorigdstport 8090 ! -s <IP_PROXY> -j DROP
-sudo apt install -y iptables-persistent && sudo netfilter-persistent save
+```ini
+# /etc/systemd/system/farnvr-firewall.service
+[Unit]
+Description=FarNVR: port NVR_PORT jen z reverzní proxy
+After=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=RULE="-p tcp -m conntrack --ctorigdstport 8090 --ctdir ORIGINAL ! -s IP_PROXY -j DROP"
+ExecStart=/bin/sh -c "iptables -C DOCKER-USER $RULE 2>/dev/null || iptables -I DOCKER-USER $RULE"
+ExecStop=/bin/sh -c "iptables -D DOCKER-USER $RULE || true"
+
+[Install]
+WantedBy=docker.service
 ```
+
+```bash
+sudo systemctl daemon-reload && sudo systemctl enable --now farnvr-firewall.service
+```
+
+`--ctdir ORIGINAL` je nutné, jinak pravidlo zahodí i odpovědi aplikace. Balík `iptables-persistent`
+nepoužívejte, na Ubuntu odinstaluje UFW.
 
 ### Firewall
 
